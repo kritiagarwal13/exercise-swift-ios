@@ -7,36 +7,149 @@
 
 import UIKit
 
+class UserEngagement: NSObject {
+    var name: String?
+    var id: Int?
+    var score: Int?
+    
+}
+
 class ViewController: UIViewController {
 
     //MARK:- @IBOutlets
     @IBOutlet weak var tableView: UITableView!
-    
+    @IBOutlet weak var btnRefresh: UIButton!
     
     //MARK:- Properties
-//    var userObj = User()
+    var userObjs = [UsersModel]()
+    var commentObjs = [CommentsModel]()
+    var postObjs = [PostsModel]()
+    var topBloggersList = [UserEngagement]()
+    var sortedTopBloggersList = [UserEngagement]()
+    var userScores = [Int]()
+    var abc = UserEngagement()
     
     //MARK:- Life Cycle Methods
     override func viewDidLoad() {
         super.viewDidLoad()
         tableViewSetup()
-        initialSetup()
+        getData()
     }
-
 
     //MARK:- Extra Methods
-    func initialSetup() {
-        
-    }
-    
     func tableViewSetup() {
         self.tableView.delegate = self
         self.tableView.dataSource = self
-        self.tableView.register(BlogTableViewCell.self, forCellReuseIdentifier: BlogTableViewCell.identifier)
     }
     
+    func getData() {
+        getUserData()
+        getPostsData()
+        getCommentsData()
+        getTopBloggers()
+    }
+    
+    func getUserData() {
+        self.userObjs = []
+        if let localUsersData = self.readLocalFile(forName: "Users") {
+            do {
+                let decodedUserData = try JSONDecoder().decode([UsersModel].self, from: localUsersData)
+                self.userObjs = decodedUserData
+                self.tableView.reloadData()
+            } catch {
+                print("decode error")
+            }
+        }
+    }
+    
+    
+    func getPostsData() {
+        self.postObjs = []
+        guard let localPostsData = self.readLocalFile(forName: "Posts") else { return }
+        do {
+            let decodedPostsData = try JSONDecoder().decode([PostsModel].self, from: localPostsData)
+            self.postObjs = decodedPostsData
+            self.tableView.reloadData()
+        } catch {
+            print("decode error")
+        }
+    }
+    
+    
+    func getCommentsData() {
+        self.commentObjs = []
+        if let localCommentsData = self.readLocalFile(forName: "Comments") {
+            do {
+                let decodedCommentsData = try JSONDecoder().decode([CommentsModel].self, from: localCommentsData)
+                self.commentObjs = decodedCommentsData
+                self.tableView.reloadData()
+            } catch {
+                print("decode error")
+            }
+        }
+    }
+    
+    
+    private func readLocalFile(forName name: String) -> Data? {
+       
+        let jsonData : Data?
+        
+        if name == "Users" {
+            jsonData = Resource.Users.data()
+        } else if name == "Posts"  {
+            jsonData = Resource.Posts.data()
+        } else {
+            jsonData = Resource.Comments.data()
+        }
+        return jsonData
+    }
+    
+    
+    func calculateCommentsPerPost(pid: Int) -> Int {
+        var count = 0
+        for each in commentObjs {
+            if each.postId == pid {
+                count += 1
+            }
+        }
+        return count
+    }
+    
+    
+    func getTopBloggers() {
+        var engagementScore = 0
+        
+        for index in 0..<userObjs.count {
+            for each in postObjs {
+                if each.userId == userObjs[index].id {
+                    engagementScore = calculateCommentsPerPost(pid: each.id ?? 0)
+                }
+            }
+            
+            self.userScores.append(engagementScore)
+        }
+        
+        for index in 0..<userObjs.count {
+            let xyz = UserEngagement()
+            xyz.name = self.userObjs[index].name ?? ""
+            xyz.score = self.userScores[index]
+            xyz.id = self.userObjs[index].id ?? 0
+            self.topBloggersList.append(xyz)
+        }
+        
+        let sorted = self.topBloggersList.sorted { obj1, obj2 in
+            return obj1.score ?? 0 > obj2.score ?? 0
+        }
+        self.sortedTopBloggersList = sorted
+    }
+    
+    
     //MARK:- @IBActions
+    @IBAction func refreshAction(_ sender: UIButton) {
+        getData()
+    }
 }
+
 
 //MARK:- TableView Extensions
 extension ViewController: UITableViewDelegate, UITableViewDataSource {
@@ -47,11 +160,12 @@ extension ViewController: UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: BlogTableViewCell.identifier, for: indexPath) as! BlogTableViewCell
+        cell.setCellData(userName: self.sortedTopBloggersList[indexPath.row].name ?? "", userScore: self.sortedTopBloggersList[indexPath.row].score ?? 0, userId: self.sortedTopBloggersList[indexPath.row].id ?? 0)
         return cell
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 50
+        return 75
     }
     
 }

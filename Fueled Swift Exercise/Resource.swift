@@ -9,9 +9,9 @@ import Foundation
 
 public enum Resource: String {
 
-    case users
-    case posts
-    case comments
+    case Users
+    case Posts
+    case Comments
 
     public func data() -> Data {
         let path = Bundle.main.path(forResource: self.rawValue, ofType: "json")!
