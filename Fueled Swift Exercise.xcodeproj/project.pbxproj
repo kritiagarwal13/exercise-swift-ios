@@ -109,7 +109,6 @@
 				D6ABC22F277B3A5900B68BB7 /* SceneDelegate.swift */,
 				D6ABC24C277B3E6A00B68BB7 /* Model */,
 				D6ABC24E277B3E7500B68BB7 /* View */,
-				D6ABC24D277B3E6F00B68BB7 /* ViewModel */,
 				D6ABC24B277B3E5700B68BB7 /* Controller */,
 				D6ABC242277B3B5100B68BB7 /* Resources */,
 				D6ABC249277B3CD300B68BB7 /* Resource.swift */,
@@ -147,13 +146,6 @@
 				D6A79A90277B4226007914A6 /* UsersModel */,
 			);
 			path = Model;
-			sourceTree = "<group>";
-		};
-		D6ABC24D277B3E6F00B68BB7 /* ViewModel */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = ViewModel;
 			sourceTree = "<group>";
 		};
 		D6ABC24E277B3E7500B68BB7 /* View */ = {
