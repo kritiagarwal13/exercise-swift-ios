@@ -15,7 +15,6 @@ class BlogTableViewCell: UITableViewCell {
     @IBOutlet weak var userScoreLabel: UILabel!
     
     
-    
     //MARK:- Properties
     static let identifier = "BlogTableViewCell"
     static func nib() -> UINib {
@@ -33,8 +32,9 @@ class BlogTableViewCell: UITableViewCell {
         // Configure the view for the selected state
     }
     
+    
     //MARK:- Extra Methods
-    func setCellData(userName: String?, userScore: Int?, userId:Int?) {
+    func setCellData(userName: String?, userScore: Double?, userId:Int?) {
         self.nameLabel.text = userName ?? ""
         self.userIdLabel.text = "\(String(describing: userId ?? 0))"
         self.userScoreLabel.text = "\(userScore ?? 0)"

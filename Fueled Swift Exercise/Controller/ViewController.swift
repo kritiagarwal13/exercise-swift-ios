@@ -10,7 +10,7 @@ import UIKit
 class UserEngagement: NSObject {
     var name: String?
     var id: Int?
-    var score: Int?
+    var score: Double?
     
 }
 
@@ -18,7 +18,7 @@ class ViewController: UIViewController {
 
     //MARK:- @IBOutlets
     @IBOutlet weak var tableView: UITableView!
-    @IBOutlet weak var btnRefresh: UIButton!
+
     
     //MARK:- Properties
     var userObjs = [UsersModel]()
@@ -26,8 +26,8 @@ class ViewController: UIViewController {
     var postObjs = [PostsModel]()
     var topBloggersList = [UserEngagement]()
     var sortedTopBloggersList = [UserEngagement]()
-    var userScores = [Int]()
-    var abc = UserEngagement()
+    var userScores = [Double]()
+
     
     //MARK:- Life Cycle Methods
     override func viewDidLoad() {
@@ -36,6 +36,7 @@ class ViewController: UIViewController {
         getData()
     }
 
+    
     //MARK:- Extra Methods
     func tableViewSetup() {
         self.tableView.delegate = self
@@ -44,8 +45,6 @@ class ViewController: UIViewController {
     
     func getData() {
         getUserData()
-        getPostsData()
-        getCommentsData()
         getTopBloggers()
     }
     
@@ -60,10 +59,7 @@ class ViewController: UIViewController {
                 print("decode error")
             }
         }
-    }
-    
-    
-    func getPostsData() {
+        
         self.postObjs = []
         guard let localPostsData = self.readLocalFile(forName: "Posts") else { return }
         do {
@@ -73,10 +69,7 @@ class ViewController: UIViewController {
         } catch {
             print("decode error")
         }
-    }
-    
-    
-    func getCommentsData() {
+        
         self.commentObjs = []
         if let localCommentsData = self.readLocalFile(forName: "Comments") {
             do {
@@ -91,9 +84,7 @@ class ViewController: UIViewController {
     
     
     private func readLocalFile(forName name: String) -> Data? {
-       
         let jsonData : Data?
-        
         if name == "Users" {
             jsonData = Resource.Users.data()
         } else if name == "Posts"  {
@@ -105,24 +96,47 @@ class ViewController: UIViewController {
     }
     
     
-    func calculateCommentsPerPost(pid: Int) -> Int {
-        var count = 0
-        for each in commentObjs {
-            if each.postId == pid {
-                count += 1
-            }
-        }
-        return count
+    func calculateTotalPosts(uid: Int) -> Double {
+//        for each in postObjs {
+//            if each.id == uid {
+//                postsCount += 1
+//            }
+//        }
+        let pCount = postObjs.map{ $0.id == uid }.count
+        print("calculateTotalPosts \(uid), \(pCount)")
+        return Double(pCount)
     }
     
+    func calculateCommentsPerUser(pid: Int) -> Double {
+//        for each in commentObjs {
+//            if each.postId == pid {
+//                count += 1
+//            }
+//        }
+        let cCount = commentObjs.map{ $0.postId == pid }.count
+        print("calculateCommentsPerUser \(pid), \(cCount)")
+        return Double(cCount)
+    }
+    
+    func calculateTotalComments(uid: Int) -> Double {
+        var cCount = 0
+        for each in postObjs {
+            if (each.userId == uid) {
+                cCount = commentObjs.map{ $0.postId == each.id }.count
+            }
+        }
+        print("calculateTotalComments \(uid), \(cCount)")
+        return Double(cCount)
+    }
     
     func getTopBloggers() {
-        var engagementScore = 0
+        var engagementScore = 0.0
         
         for index in 0..<userObjs.count {
             for each in postObjs {
                 if each.userId == userObjs[index].id {
-                    engagementScore = calculateCommentsPerPost(pid: each.id ?? 0)
+                    engagementScore = (calculateTotalComments(uid: each.userId ?? 0) / calculateTotalPosts(uid: each.userId ?? 0))
+                    //calculateTotalPosts(uid: each.userId ?? 0) + calculateCommentsPerPost(pid: each.id ?? 0)
                 }
             }
             
@@ -143,11 +157,6 @@ class ViewController: UIViewController {
         self.sortedTopBloggersList = sorted
     }
     
-    
-    //MARK:- @IBActions
-    @IBAction func refreshAction(_ sender: UIButton) {
-        getData()
-    }
 }
 
 
@@ -155,12 +164,12 @@ class ViewController: UIViewController {
 extension ViewController: UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return 3
+        return self.sortedTopBloggersList.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: BlogTableViewCell.identifier, for: indexPath) as! BlogTableViewCell
-        cell.setCellData(userName: self.sortedTopBloggersList[indexPath.row].name ?? "", userScore: self.sortedTopBloggersList[indexPath.row].score ?? 0, userId: self.sortedTopBloggersList[indexPath.row].id ?? 0)
+        cell.setCellData(userName: self.sortedTopBloggersList[indexPath.row].name ?? "", userScore: self.sortedTopBloggersList[indexPath.row].score ?? 0.0, userId: self.sortedTopBloggersList[indexPath.row].id ?? 0)
         return cell
     }
     
