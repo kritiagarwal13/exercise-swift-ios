@@ -21,6 +21,8 @@ struct UsersModel : Codable {
 	let phone : String?
 	let website : String?
 	let company : Company?
+    var postModel = [PostsModel]()
+    var avgCount = 0
 
 	enum CodingKeys: String, CodingKey {
 

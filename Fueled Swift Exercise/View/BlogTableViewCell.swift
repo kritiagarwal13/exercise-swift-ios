@@ -34,7 +34,7 @@ class BlogTableViewCell: UITableViewCell {
     
     
     //MARK:- Extra Methods
-    func setCellData(userName: String?, userScore: Double?, userId:Int?) {
+    func setCellData(userName: String?, userScore: Int?, userId:Int?) {
         self.nameLabel.text = userName ?? ""
         self.userIdLabel.text = "\(String(describing: userId ?? 0))"
         self.userScoreLabel.text = "\(userScore ?? 0)"

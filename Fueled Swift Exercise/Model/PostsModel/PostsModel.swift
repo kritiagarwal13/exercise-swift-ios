@@ -17,6 +17,7 @@ struct PostsModel : Codable {
 	let id : Int?
 	let title : String?
 	let body : String?
+    var commentModel = [CommentsModel]()
 
 	enum CodingKeys: String, CodingKey {
 

@@ -7,13 +7,6 @@
 
 import UIKit
 
-class UserEngagement: NSObject {
-    var name: String?
-    var id: Int?
-    var score: Double?
-    
-}
-
 class ViewController: UIViewController {
 
     //MARK:- @IBOutlets
@@ -24,10 +17,6 @@ class ViewController: UIViewController {
     var userObjs = [UsersModel]()
     var commentObjs = [CommentsModel]()
     var postObjs = [PostsModel]()
-    var topBloggersList = [UserEngagement]()
-    var sortedTopBloggersList = [UserEngagement]()
-    var userScores = [Double]()
-
     
     //MARK:- Life Cycle Methods
     override func viewDidLoad() {
@@ -35,7 +24,6 @@ class ViewController: UIViewController {
         tableViewSetup()
         getData()
     }
-
     
     //MARK:- Extra Methods
     func tableViewSetup() {
@@ -45,7 +33,7 @@ class ViewController: UIViewController {
     
     func getData() {
         getUserData()
-        getTopBloggers()
+        calculateTopBloggers()
     }
     
     func getUserData() {
@@ -54,7 +42,6 @@ class ViewController: UIViewController {
             do {
                 let decodedUserData = try JSONDecoder().decode([UsersModel].self, from: localUsersData)
                 self.userObjs = decodedUserData
-                self.tableView.reloadData()
             } catch {
                 print("decode error")
             }
@@ -65,7 +52,6 @@ class ViewController: UIViewController {
         do {
             let decodedPostsData = try JSONDecoder().decode([PostsModel].self, from: localPostsData)
             self.postObjs = decodedPostsData
-            self.tableView.reloadData()
         } catch {
             print("decode error")
         }
@@ -75,13 +61,11 @@ class ViewController: UIViewController {
             do {
                 let decodedCommentsData = try JSONDecoder().decode([CommentsModel].self, from: localCommentsData)
                 self.commentObjs = decodedCommentsData
-                self.tableView.reloadData()
             } catch {
                 print("decode error")
             }
         }
     }
-    
     
     private func readLocalFile(forName name: String) -> Data? {
         let jsonData : Data?
@@ -95,66 +79,29 @@ class ViewController: UIViewController {
         return jsonData
     }
     
-    
-    func calculateTotalPosts(uid: Int) -> Double {
-//        for each in postObjs {
-//            if each.id == uid {
-//                postsCount += 1
-//            }
-//        }
-        let pCount = postObjs.map{ $0.id == uid }.count
-        print("calculateTotalPosts \(uid), \(pCount)")
-        return Double(pCount)
-    }
-    
-    func calculateCommentsPerUser(pid: Int) -> Double {
-//        for each in commentObjs {
-//            if each.postId == pid {
-//                count += 1
-//            }
-//        }
-        let cCount = commentObjs.map{ $0.postId == pid }.count
-        print("calculateCommentsPerUser \(pid), \(cCount)")
-        return Double(cCount)
-    }
-    
-    func calculateTotalComments(uid: Int) -> Double {
-        var cCount = 0
-        for each in postObjs {
-            if (each.userId == uid) {
-                cCount = commentObjs.map{ $0.postId == each.id }.count
-            }
+    func calculateTopBloggers() {
+        // to add comments to each post
+        for i in 0..<postObjs.count {
+            postObjs[i].commentModel.append(contentsOf: self.commentObjs.filter({$0.postId == postObjs[i].id}))
         }
-        print("calculateTotalComments \(uid), \(cCount)")
-        return Double(cCount)
-    }
-    
-    func getTopBloggers() {
-        var engagementScore = 0.0
         
-        for index in 0..<userObjs.count {
-            for each in postObjs {
-                if each.userId == userObjs[index].id {
-                    engagementScore = (calculateTotalComments(uid: each.userId ?? 0) / calculateTotalPosts(uid: each.userId ?? 0))
-                    //calculateTotalPosts(uid: each.userId ?? 0) + calculateCommentsPerPost(pid: each.id ?? 0)
-                }
+        //to add posts to each user
+        for i in 0..<userObjs.count {
+            userObjs[i].postModel.append(contentsOf: self.postObjs.filter({$0.userId == userObjs[i].id}))
+            var cCount = 0
+            for eachPost in userObjs[i].postModel {
+                cCount += eachPost.commentModel.count
             }
             
-            self.userScores.append(engagementScore)
+            //to set average comment count for each user
+            userObjs[i].avgCount = cCount / userObjs[i].postModel.count
         }
         
-        for index in 0..<userObjs.count {
-            let xyz = UserEngagement()
-            xyz.name = self.userObjs[index].name ?? ""
-            xyz.score = self.userScores[index]
-            xyz.id = self.userObjs[index].id ?? 0
-            self.topBloggersList.append(xyz)
+        //assign topBlogs with sorted user Array
+        self.userObjs = userObjs.sorted { obj1, obj2 in
+            return obj1.avgCount > obj2.avgCount
         }
-        
-        let sorted = self.topBloggersList.sorted { obj1, obj2 in
-            return obj1.score ?? 0 > obj2.score ?? 0
-        }
-        self.sortedTopBloggersList = sorted
+        self.tableView.reloadData()
     }
     
 }
@@ -164,12 +111,12 @@ class ViewController: UIViewController {
 extension ViewController: UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return self.sortedTopBloggersList.count
+        return self.userObjs.prefix(3).count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: BlogTableViewCell.identifier, for: indexPath) as! BlogTableViewCell
-        cell.setCellData(userName: self.sortedTopBloggersList[indexPath.row].name ?? "", userScore: self.sortedTopBloggersList[indexPath.row].score ?? 0.0, userId: self.sortedTopBloggersList[indexPath.row].id ?? 0)
+        cell.setCellData(userName: self.userObjs[indexPath.row].name ?? "", userScore: self.userObjs[indexPath.row].avgCount , userId: self.userObjs[indexPath.row].id ?? 0)
         return cell
     }
     
